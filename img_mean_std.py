@@ -2,7 +2,9 @@ import cv2
 import glob
 import numpy as np
 
-imgs = glob.glob("/home/room/dataset/pacs_png_2014_2018_chest_fromC/1/*.png")
+imgs = glob.glob("/home/ys1/dataset/CheXpert-v1.0-small/*/*/*/*.jpg")
+print(f'images number is : {len(imgs)}')
+print('-'*20)
 mean_list = []
 stddv_list = []
 count = 0
@@ -17,3 +19,10 @@ for img in imgs:
         print(np.mean(mean_list)/255)
         print(np.mean(stddv_list)/255)
         print('-'*20)
+total_mean = np.mean(mean_list)/255
+total_std = np.mean(stddv_list)/255
+print(total_mean)
+print(total_std)
+with open('total_mean_std.txt', "w") as f:
+    f.write(f"total_mean: {total_mean}\n")
+    f.write(f"total_std: {total_std}\n")
