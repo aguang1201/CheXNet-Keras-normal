@@ -49,12 +49,12 @@ def main():
     output_dir = cp["EVALUATION"].get("output_dir")
     weight_dir = cp["EVALUATION"].get("weight_dir")
     batch_size = cp["EVALUATION"].getint("batch_size")
-    validation_split = cp["EVALUATION"].getfloat("validation_split")
     seed = cp["EVALUATION"].getint("seed")
     mean = cp["EVALUATION"].getfloat("mean")
     std = cp["EVALUATION"].getfloat("std")
     generator_workers = cp["EVALUATION"].getint("generator_workers")
     mode = cp["EVALUATION"].get("mode")
+    os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
     grayscale = cp["EVALUATION"].getboolean("grayscale")
     if grayscale:
@@ -75,7 +75,7 @@ def main():
         featurewise_std_normalization=True,
         # preprocessing_function=crop_image,
     )
-    generator_train_data = ImageDataGenerator(**data_aug_dict, validation_split=validation_split)
+    generator_train_data = ImageDataGenerator(**data_aug_dict)
     generator_train_data.mean = mean
     generator_train_data.std = std
     val_generator = generator_train_data.flow_from_directory(
@@ -84,8 +84,7 @@ def main():
         class_mode='binary',
         target_size=(image_dimension, image_dimension),
         batch_size=batch_size,
-        subset=mode,
-        seed=seed)
+    )
     y = val_generator.classes
     for model_weights_path in weights:
         if os.path.exists(model_weights_path):
@@ -101,7 +100,6 @@ def main():
                 transform_14=False,
                 #add_full_connection=True,
             )
-            model.trainable = False
             print("** load test generator **")
             gpus = len(os.getenv("CUDA_VISIBLE_DEVICES", "").split(","))
             if gpus > 1:

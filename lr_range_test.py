@@ -37,7 +37,7 @@ output_weights_name = cp["TRAIN"].get("output_weights_name")
 use_base_model_weights = cp["TRAIN"].getboolean("use_base_model_weights")
 use_trained_model_weights = cp["TRAIN"].getboolean("use_trained_model_weights")
 load_weights_file = cp["TRAIN"].get("load_weights_file")
-epochs = 10
+epochs = 4
 batch_size = cp["TRAIN"].getint("batch_size")
 initial_learning_rate = cp["TRAIN"].getfloat("initial_learning_rate")
 generator_workers = cp["TRAIN"].getint("generator_workers")
@@ -56,20 +56,20 @@ freezen_layers_block = cp["TRAIN"].getint("freezen_layers_block")
 mean = cp["TRAIN"].getfloat("mean")
 std = cp["TRAIN"].getfloat("std")
 
-# def scheduler(epoch):
-#     epoch = epoch+1
-#     if epoch > 4:  #0.8~1:0.00001
-#         lr = 0.1
-#     elif epoch > 3:  #0.8~1:0.00001
-#         lr = 0.01
-#     elif epoch > 2:  #0.5~0.8:0.0001
-#         lr = 0.001
-#     elif epoch > 1:  # 0.5~0.8:0.0001
-#         lr = 0.0001
-#     else:                       #0~0.5:0.001
-#         lr = 0.00001
-#     print(f'epoch: {epoch},lr: {lr}')
-#     return lr
+def scheduler(epoch):
+    epoch = epoch+1
+    # if epoch > 4:  #0.8~1:0.00001
+    #     lr = 0.1
+    if epoch > 3:  #0.8~1:0.00001
+        lr = 0.1
+    elif epoch > 2:  #0.5~0.8:0.0001
+        lr = 0.01
+    elif epoch > 1:  # 0.5~0.8:0.0001
+        lr = 0.001
+    else:                       #0~0.5:0.001
+        lr = 0.0001
+    print(f'epoch: {epoch},lr: {lr}')
+    return lr
 
 def main():
     # check output_dir, create it if not exists
@@ -176,32 +176,32 @@ def main():
             model_train = model
             checkpoint = ModelCheckpoint(
                 output_best_weights,
-                 save_weights_only=True,
-                 save_best_only=True,
+                 # save_weights_only=True,
+                 # save_best_only=True,
                  verbose=1,
             )
 
         print("** compile model with class weights **")
         model_train.compile(optimizer=Adam(), loss=focal_loss(gamma=2., alpha=.75), metrics=['accuracy'])
-        # model_train.compile(optimizer=optimizer, loss=binary_crossentropy, metrics=['accuracy'])
+        # model_train.compile(optimizer=Adam(), loss=binary_crossentropy, metrics=['accuracy'])
         auroc = Callback_AUROC_ImageDataGenerator(
             sequence=val_generator,
             weights_path=output_best_weights,
             stats=training_stats,
             workers=generator_workers,
         )
-        # change_lr = LearningRateScheduler(scheduler, verbose=1)
+        change_lr = LearningRateScheduler(scheduler, verbose=1)
         csv_logger = CSVLogger(os.path.join(output_dir, 'training.csv'))
-        batch_size_cycliclr = ceil(n_of_train_samples // batch_size)
-        print(f'batch_size_cycliclr is : {batch_size_cycliclr}')
-        clr = CyclicLR(mode='triangular', step_size=batch_size_cycliclr, base_lr=0.000001, max_lr=0.1)
+        # batch_size_cycliclr = ceil(n_of_train_samples // batch_size)
+        # print(f'batch_size_cycliclr is : {batch_size_cycliclr}')
+        # clr = CyclicLR(mode='triangular', step_size=batch_size_cycliclr, base_lr=0.000001, max_lr=0.1)
         callbacks = [
-            clr,
+            # clr,
             checkpoint,
             auroc,
             TensorBoard(log_dir=os.path.join(output_dir, "logs"), batch_size=batch_size),
             csv_logger,
-            # change_lr,
+            change_lr,
         ]
 
         print("** start training **")
@@ -215,30 +215,11 @@ def main():
             workers=generator_workers,
             use_multiprocessing=True,
             callbacks=callbacks)
-        # model_train.save(os.path.join(output_dir, "last_model.h5"))
-        # model_train.save_weights(os.path.join(output_dir, "last_weights.h5"))
         # dump history
         print("** dump history **")
         with open(os.path.join(output_dir, "history.pkl"), "wb") as f:
             pickle.dump({"history": history.history}, f)
         print("** done! **")
-
-        h = clr.history
-        lr = h['lr']
-        iterations = h['iterations']
-
-        plt.xlabel('Training Iterations')
-        plt.ylabel('Learning Rate')
-        plt.title("CLR - 'triangular' Policy")
-        plt.plot(iterations, lr)
-        plt.savefig(os.path.join(output_dir, 'iterations_lr.png'))
-
-        acc = h['acc']
-        plt.xlabel('Learning Rate')
-        plt.ylabel('Accuracy')
-        plt.title("CLR - 'triangular' Policy")
-        plt.plot(lr, acc)
-        plt.savefig(os.path.join(output_dir, 'lr_acc.png'))
     finally:
         os.remove(running_flag_file)
 

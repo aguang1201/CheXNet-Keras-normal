@@ -57,6 +57,7 @@ mean = cp["TRAIN"].getfloat("mean")
 std = cp["TRAIN"].getfloat("std")
 base_lr = cp["TRAIN"].getfloat("base_lr")
 max_lr = cp["TRAIN"].getfloat("max_lr")
+os.environ["CUDA_VISIBLE_DEVICES"] = cp["TRAIN"].get("CUDA_VISIBLE_DEVICES")
 
 # def scheduler(epoch):
 #     # if epoch > 0.9 * epochs:  #0.8~1:0.00001
@@ -172,7 +173,7 @@ def main():
         output_best_weights = os.path.join(output_dir, f"best_{output_weights_name}")
 
         print("** check multiple gpu availability **")
-        gpus = len(os.getenv("CUDA_VISIBLE_DEVICES", "0").split(","))
+        gpus = len(os.getenv("CUDA_VISIBLE_DEVICES", "1").split(","))
         if gpus > 1:
             print(f"** multi_gpu_model is used! gpus={gpus} **")
             model_train = multi_gpu_model(model, gpus)
@@ -205,9 +206,9 @@ def main():
         print("** compile model with class weights **")
 
         optimizer = Adam()
-        # optimizer = RMSprop()
-        # model_train.compile(optimizer=optimizer, loss=binary_crossentropy, metrics=[binary_accuracy, mcor, precision, recall, f1])
-        model_train.compile(optimizer=optimizer, loss=focal_loss(gamma=2., alpha=.75), metrics=[binary_accuracy, mcor, precision, recall, f1])
+        # optimizer = SGD()
+        model_train.compile(optimizer=optimizer, loss=binary_crossentropy, metrics=[binary_accuracy, mcor, precision, recall, f1])
+        # model_train.compile(optimizer=optimizer, loss=focal_loss(gamma=2., alpha=.5), metrics=[binary_accuracy, mcor, precision, recall, f1])
         auroc = Callback_AUROC_ImageDataGenerator(
             sequence=val_generator,
             weights_path=output_best_weights,

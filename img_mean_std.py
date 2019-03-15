@@ -2,7 +2,8 @@ import cv2
 import glob
 import numpy as np
 
-imgs = glob.glob("/home/ys1/dataset/CheXpert-v1.0-small/*/*/*/*.jpg")
+# imgs = glob.glob("/home/ys1/dataset/CheXpert-v1.0-small/*/*/*/*.jpg")
+imgs = glob.glob("/home/ys1/dataset/desease14_from_zhongren_hospital_all/front/*/*.png")
 print(f'images number is : {len(imgs)}')
 print('-'*20)
 mean_list = []
@@ -26,3 +27,4 @@ print(total_std)
 with open('total_mean_std.txt', "w") as f:
     f.write(f"total_mean: {total_mean}\n")
     f.write(f"total_std: {total_std}\n")
+    f.write(f'images total number is : {len(imgs)}\n')
