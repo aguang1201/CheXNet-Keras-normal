@@ -104,8 +104,9 @@ def read_dcm(src_path, dst_path):
 def read_dcm_fromC(src_path, out_put_size=None):
     print(f'image is:{src_path}')
     file_name_list = src_path.split('/')
-    file_name = file_name_list[-2] + file_name_list[-1]
-    file_temp = os.path.join('temp', file_name)
+    # file_name = file_name_list[-2] + file_name_list[-1]
+    # file_temp = os.path.join('temp', file_name)
+    file_temp = os.path.join('temp', file_name_list[-2] + '_' + file_name_list[-1].split('.')[0] + '.png')
     try:
         os.system('dcmj2pnm +on ' + src_path + ' ' + file_temp)
         with open(file_temp, 'rb') as temp_png:
